@@ -1,0 +1,60 @@
+name: Build and Release xelf
+
+# This workflow triggers whenever you push a tag starting with 'v' (e.g., v1.0.0)
+on:
+  push:
+    tags:
+      - 'v*'
+
+# Grant write permissions so the action can create the release and upload binaries
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build for ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    
+    # We use a matrix strategy to easily build multiple architectures
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            compiler: gcc
+            output_binary: xelf-amd64
+            apt_packages: '' # Standard gcc is already installed
+            extra_flags: ''  # amd64 defaults to 4KB alignment anyway
+            
+          - arch: aarch64
+            compiler: aarch64-linux-gnu-gcc
+            output_binary: xelf-aarch64
+            apt_packages: gcc-aarch64-linux-gnu
+            # Force the cross-compiler to use a 4KB page size instead of 64KB to shrink file size
+            extra_flags: '-Wl,-z,max-page-size=4096' 
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Install cross-compiler (if needed)
+        if: matrix.apt_packages != ''
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.apt_packages }}
+
+      - name: Compile xelf
+        run: |
+          # We use Arch Linux's standard compilation flags (-Os for size, -s to strip)
+          # We inject the matrix.extra_flags to fix the AArch64 64KB bloat issue
+          FLAGS="-Os -s -ffunction-sections -fdata-sections -Wl,--gc-sections ${{ matrix.extra_flags }}"
+          ${{ matrix.compiler }} $FLAGS xelf.c -o ${{ matrix.output_binary }}
+
+      - name: Upload to GitHub Releases
+        uses: softprops/action-gh-release@v1
+        with:
+          # This action automatically creates a release for the tag and uploads the raw binary files
+          files: |
+            ${{ matrix.output_binary }}
+        env:
+          # GITHUB_TOKEN is automatically provided by GitHub Actions
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

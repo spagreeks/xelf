@@ -1,0 +1,13 @@
+[Unit]
+ConditionPathExists=%h/.sfx/%P
+
+[Service]
+WorkingDirectory=%h/.sfx/%P
+Environment=BIN=%J env=%i
+EnvironmentFile=-%h/.sfx/.env
+EnvironmentFile=-%h/.sfx/%P/.env
+EnvironmentFile=-%h/.sfx/%P/.%J.env
+EnvironmentFile=-%h/.sfx/%P/.%i.env
+ExecStart=/usr/bin/env ./${BIN}
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
