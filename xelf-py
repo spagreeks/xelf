@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+''':'
+set -a
+test -f .env  && source .env
+set +a
+exec python3 -u "$0" "$@"; exit $?
+':'''
+
+print("hello")

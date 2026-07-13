@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -a; test -f .env && source .env; set +a
+exec ruby -x "$0" "$@"; exit $?
+
+#!/usr/bin/env ruby
+puts "Hello, World"
+
+
+__END__
+
+You write any thing here.

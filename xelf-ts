@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+":" /*
+set -a
+test -f .env && source .env
+set +a
+exec bun "$0" "$@"; exit $?
+":" */
+
+
+console.log("hello")
